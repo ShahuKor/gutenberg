@@ -134,10 +134,13 @@ function getOverridesFromBlocks( blocks, defaultValues ) {
 				defaultValues[ blockId ][ attributeKey ]
 			) {
 				overrides[ blockId ] ??= {};
-				// TODO: We need a way to represent `undefined` in the serialized overrides.
-				// Also see: https://github.com/WordPress/gutenberg/pull/57249#discussion_r1452987871
 				overrides[ blockId ][ attributeKey ] =
-					block.attributes[ attributeKey ];
+					block.attributes[ attributeKey ] === undefined
+						? // TODO: We use an empty string to represent undefined for now until
+						  // we support a richer format for overrides and the block binding API.
+						  // Currently only the `linkTarget` attribute of `core/button` is affected.
+						  ''
+						: block.attributes[ attributeKey ];
 			}
 		}
 	}
