@@ -85,6 +85,10 @@ const DEFAULT_VIEW = {
 	search: '',
 	page: 1,
 	perPage: 20,
+	sort: {
+		field: 'title',
+		direction: 'asc',
+	},
 	// All fields are visible by default, so it's
 	// better to keep track of the hidden ones.
 	hiddenFields: [ 'preview' ],
@@ -147,6 +151,7 @@ function Preview( { item, viewType } ) {
 		postType: item.type,
 		canvas: 'edit',
 	} );
+
 	const isEmpty = ! blocks?.length;
 	// Wrap everything in a block editor provider to ensure 'styles' that are needed
 	// for the previews are synced between the site editor store and the block editor store.
@@ -161,18 +166,23 @@ function Preview( { item, viewType } ) {
 				className={ `page-templates-preview-field is-viewtype-${ viewType }` }
 				style={ { backgroundColor } }
 			>
-				<button
-					className="page-templates-preview-field__button"
-					type="button"
-					onClick={ onClick }
-					aria-label={ item.title?.rendered || item.title }
-				>
-					{ isEmpty &&
-						( item.type === TEMPLATE_POST_TYPE
-							? __( 'Empty template' )
-							: __( 'Empty template part' ) ) }
-					{ ! isEmpty && <BlockPreview blocks={ blocks } /> }
-				</button>
+				{ viewType === LAYOUT_LIST && ! isEmpty && (
+					<BlockPreview blocks={ blocks } />
+				) }
+				{ viewType !== LAYOUT_LIST && (
+					<button
+						className="page-templates-preview-field__button"
+						type="button"
+						onClick={ onClick }
+						aria-label={ item.title?.rendered || item.title }
+					>
+						{ isEmpty &&
+							( item.type === TEMPLATE_POST_TYPE
+								? __( 'Empty template' )
+								: __( 'Empty template part' ) ) }
+						{ ! isEmpty && <BlockPreview blocks={ blocks } /> }
+					</button>
+				) }
 			</div>
 		</ExperimentalBlockEditorProvider>
 	);
@@ -182,11 +192,13 @@ export default function PageTemplatesTemplateParts( { postType } ) {
 	const { params } = useLocation();
 	const { activeView = 'all', layout } = params;
 	const defaultView = useMemo( () => {
+		const usedType = window?.__experimentalAdminViews
+			? layout ?? DEFAULT_VIEW.type
+			: DEFAULT_VIEW.type;
 		return {
 			...DEFAULT_VIEW,
-			type: window?.__experimentalAdminViews
-				? layout ?? DEFAULT_VIEW.type
-				: DEFAULT_VIEW.type,
+			type: usedType,
+			layout: defaultConfigPerViewType[ usedType ],
 			filters:
 				activeView !== 'all'
 					? [
@@ -374,7 +386,7 @@ export default function PageTemplatesTemplateParts( { postType } ) {
 				data: filteredData,
 				view,
 				fields,
-				textFields: [ 'title' ],
+				textFields: [ 'title', 'author' ],
 			} );
 		}
 		// Handle pagination.
